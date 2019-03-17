@@ -37,7 +37,7 @@ export class TodoApp extends Component {
 					onKeyPress={this.handleKeyPress}
 				/>
 				{todos.map(id => (
-					<Todo id={id} />
+					<Todo key={id} id={id} />
 				))}
 			</div>
 		)
@@ -70,7 +70,7 @@ class Todo extends Component<{ id: string }> {
 					onChange={this.handleCompleted}
 				/>
 				<span>{todo.text}</span>
-				<button onChange={this.handleDelete}>delete</button>
+				<button onClick={this.handleDelete}>delete</button>
 			</div>
 		)
 	}

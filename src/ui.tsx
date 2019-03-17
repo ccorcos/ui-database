@@ -1,5 +1,6 @@
 import * as React from "react"
 import * as _ from "lodash"
+import { emit } from "cluster"
 
 type Path = Array<string | number>
 
@@ -39,11 +40,27 @@ class Database {
 
 	set(path: Path, value: any) {
 		this.state = objSet(this.state, path, value)
+		this.emit(path)
+	}
+
+	emit(path: Path, direction: "up" | "down" | "both" = "both") {
 		const nodePath = _.flatten(path.map(item => ["children", item]))
 		const node: ListenerTree | undefined = objGet(this.listeners, nodePath)
 		if (node && node.listeners) {
 			for (const fn of Array.from(node.listeners.keys())) {
 				fn()
+			}
+		}
+		if (path.length > 0 && (direction === "up" || direction === "both")) {
+			this.emit(_.initial(path))
+		}
+		if (
+			node &&
+			node.children &&
+			(direction === "down" || direction === "both")
+		) {
+			for (const key in node.children) {
+				this.emit([...path, key], "down")
 			}
 		}
 	}
