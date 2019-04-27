@@ -10,6 +10,11 @@ This idea involves a global state tree. You can use the path to the component fo
 
 ## To Do
 
-- stricter types
-- any component can override its path.
-- syntax sugar for getting global path vs child path.
+- [x] todomvc
+- [] stricter types
+	- [] Use Proxy to create an easy to use, well typed database...
+	- [] Most state can be global. Its up to the dev to make abtractions.
+	- [] Local state like button hovers can use just a random id.
+	- [] Controlling local subtree state means passing an entity id down to the child.
+- [] any component can override its path.
+- [] syntax sugar for getting global path vs child path.

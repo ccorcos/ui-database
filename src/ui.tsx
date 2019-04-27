@@ -79,6 +79,48 @@ class Database {
 	}
 }
 
+// Wrap the object to contain the objects path.
+const getPathKey = Symbol("getPathKey")
+const getValueKey = Symbol("getValueKey")
+
+type Wrapped<Value> = { [key in keyof Value]: Wrapped<Value[key]> } & {
+	[getPathKey]: Array<number | string>
+	[getValueKey]: Value
+}
+
+function wrap<Obj>(obj: Obj, path: Array<string | number> = []) {
+	const wrapped: any = {
+		[getPathKey]: path,
+		[getValueKey]: obj,
+	}
+	for (const key in obj) {
+		// Lazy getters
+		Object.defineProperty(wrapped, key, {
+			get() {
+				return wrap(obj[key], [...path, key])
+			},
+		})
+	}
+	return wrapped as Wrapped<Obj>
+}
+
+class WrappedDatabase<Obj> {
+	db = new Database()
+	get<Value>(path: (obj: Wrapped<Obj>) => Wrapped<Value>) {
+		return this.db.get(path(wrap(this.db.state as Obj))[getPathKey]) as Value
+	}
+
+	set<Value>(path: (obj: Wrapped<Obj>) => Wrapped<Value>, value: Value) {
+		this.db.set(path(wrap(this.db.state as Obj))[getPathKey], value)
+	}
+
+	initialize<Value>(path: (obj: Wrapped<Obj>) => Wrapped<Value>, value: Value) {
+		if (db.get(path(wrap(this.db.state as Obj))[getPathKey]) === undefined) {
+			db.set(path(wrap(this.db.state as Obj))[getPathKey], value)
+		}
+	}
+}
+
 function getReactInstancePath(reactInstance) {
 	if (!reactInstance || !reactInstance._reactInternalFiber) {
 		return
@@ -102,7 +144,7 @@ function getReactInstancePath(reactInstance) {
 const db = new Database()
 window["db"] = db
 
-export class Component<Props = {}> extends React.Component<
+export class Component<Props = {}, State = {}> extends React.Component<
 	Props & { id?: number | string }
 > {
 	constructor(props: Props) {
@@ -120,18 +162,5 @@ export class Component<Props = {}> extends React.Component<
 		this.unmount.forEach(fn => fn())
 	}
 
-	db = {
-		get: (path: Path) => {
-			this.unmount.add(db.listen(path, this.rerender))
-			return db.get(path)
-		},
-		initialize: (path: Path, value: any) => {
-			if (db.get(path) === undefined) {
-				db.set(path, value)
-			}
-		},
-		set: (path: Path, value: any) => {
-			return db.set(path, value)
-		},
-	}
+	db = new WrappedDatabase<State>()
 }
