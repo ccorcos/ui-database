@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { css } from "glamor"
-import { App } from "./ui2"
+import { CousinCountersApp } from "./examples/5-CousinCounters"
 
 css.global("a", {
 	color: "inherit",
@@ -11,4 +11,4 @@ css.global("a", {
 const root = document.createElement("div")
 document.body.appendChild(root)
 
-ReactDOM.render(<App />, root)
+ReactDOM.render(<CousinCountersApp />, root)
