@@ -15,6 +15,9 @@ const config: Configuration = {
 				use: [
 					{
 						loader: "awesome-typescript-loader",
+						options: {
+							transpileOnly: true,
+						},
 					},
 				],
 			},

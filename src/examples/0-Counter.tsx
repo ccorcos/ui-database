@@ -52,52 +52,78 @@ export class CounterStore extends Store<TableToRecord, "counter"> {
 	}
 }
 
-export class Counter extends React.PureComponent<{
-	store: CounterStore
-	delta: number
-}> {
-	stop = this.props.store.listen(() => {
-		this.forceUpdate()
-	})
-
-	componentWillReceiveProps(nextProps) {
-		if (nextProps.store.id !== this.props.store.id) {
-			this.stop()
-			this.stop = nextProps.store.listen(() => this.forceUpdate())
+export function useDb<Table extends keyof TableToRecord>(
+	table: Table,
+	id: string,
+	initialValue: TableToRecord[Table]
+) {
+	const defaultState = React.useMemo(() => {
+		const record = db.get(table, id)
+		if (record === undefined && initialValue !== undefined) {
+			db.set(table, id, initialValue)
 		}
-	}
+		return record || initialValue
+	}, [table, id])
 
-	componentWillUnmount() {
-		this.stop()
-	}
+	const [value, setState] = React.useState(defaultState)
 
-	decrement = () => {
-		this.props.store.decrement(this.props.delta)
-	}
+	React.useEffect(() => {
+		db.listen(table, id, value => {
+			if (value !== undefined) {
+				setState(value)
+			}
+		})
+	}, [table, id])
 
-	increment = () => {
-		this.props.store.increment(this.props.delta)
-	}
+	const setValue = React.useMemo(() => {
+		return (value: TableToRecord[Table]) => {
+			db.set(table, id, value)
+			db.commit()
+		}
+	}, [table, id])
 
-	render() {
-		console.log("render", this.props.store.id)
-		return (
-			<div>
-				<button onClick={this.decrement}>{"-"}</button>
-				<span>{this.props.store.get().count}</span>
-				<button onClick={this.increment}>{"+"}</button>
-			</div>
-		)
-	}
+	// TODO: `as const`
+	return [value, setValue] as [
+		TableToRecord[Table],
+		(value: TableToRecord[Table]) => void
+	]
 }
 
-export class OneCounterApp extends React.PureComponent {
-	counterStore = new CounterStore("counter")
-	render() {
-		return (
-			<div>
-				<Counter store={this.counterStore} delta={1} />
-			</div>
-		)
-	}
+// Actions are just pure functions.
+function increment(counter: TableToRecord["counter"], delta: number) {
+	return { count: counter.count + delta }
+}
+
+function decrement(counter: TableToRecord["counter"], delta: number) {
+	return { count: counter.count - delta }
+}
+
+export function Counter(props: { id: string; delta: number }) {
+	const [counter, setCounter] = useDb("counter", props.id, { count: 0 })
+
+	const handleIncrement = React.useMemo(
+		() => () => setCounter(increment(counter, props.delta)),
+		[counter, setCounter, props.delta]
+	)
+
+	const handleDecrement = React.useMemo(
+		() => () => setCounter(decrement(counter, props.delta)),
+		[counter, setCounter, props.delta]
+	)
+
+	return (
+		<div>
+			<button onClick={handleDecrement}>{"-"}</button>
+			<span>{counter.count}</span>
+			<button onClick={handleIncrement}>{"+"}</button>
+		</div>
+	)
+}
+
+export function OneCounterApp() {
+	return (
+		<div>
+			<Counter id={"counter"} delta={1} />
+		</div>
+	)
 }

@@ -1,106 +1,82 @@
 import * as React from "react"
-import { CounterStore, Counter, TableToRecord, db } from "./0-Counter"
+import * as _ from "lodash"
+import { CounterStore, Counter, TableToRecord, db, useDb } from "./0-Counter"
 import { Store, randomId } from "../ui2"
 
-export class ListOfStore<ChildTable extends keyof TableToRecord> extends Store<
-	TableToRecord,
-	"listOf"
-> {
-	constructor(id: string, initialValue?: TableToRecord["listOf"]) {
-		super("listOf", id, db)
-		const value = super.get()
-		if (value === undefined) {
-			if (initialValue === undefined) {
-				this.set({ itemIds: [] })
-			} else {
-				this.set(initialValue)
-			}
-			db.commit()
-		}
-	}
-
-	get() {
-		const value = super.get()
-		if (value === undefined) {
-			throw new Error("Uninitialized Store.")
-		}
-		return value
-	}
-
-	insert(store: Store<TableToRecord, ChildTable>) {
-		const { itemIds } = this.get()
-		this.set({ itemIds: [...itemIds, store.id] })
-		db.commit()
-	}
-
-	remove(store: Store<TableToRecord, ChildTable>) {
-		const { itemIds } = this.get()
-		this.set({ itemIds: itemIds.filter(id => id !== store.id) })
-		db.commit()
-	}
+function insert(listOf: TableToRecord["listOf"], id: string) {
+	return { itemIds: [...listOf.itemIds, id] }
 }
 
-export class ListOfCounters extends React.PureComponent<{
-	store: ListOfStore<"counter">
-}> {
-	stop = this.props.store.listen(() => {
-		this.forceUpdate()
-	})
-
-	componentWillReceiveProps(nextProps) {
-		if (nextProps.store.id !== this.props.store.id) {
-			this.stop()
-			this.stop = nextProps.store.listen(() => this.forceUpdate())
-		}
-	}
-
-	componentWillUnmount() {
-		this.stop()
-	}
-
-	render() {
-		return (
-			<div>
-				<button
-					onClick={() => {
-						this.props.store.set({
-							itemIds: [...this.props.store.get().itemIds, randomId()],
-						})
-						db.commit()
-					}}
-				>
-					insert
-				</button>
-				{this.props.store.get().itemIds.map(counterId => {
-					// TODO: this referential equality hack is a not explicit enough.
-					const store = new CounterStore(counterId)
-					return (
-						<div key={counterId}>
-							<Counter store={store} delta={1} />
-							<button
-								onClick={() => {
-									this.props.store.remove(store)
-									db.commit()
-								}}
-							>
-								remove
-							</button>
-						</div>
-					)
-				})}
-			</div>
-		)
-	}
+function remove(listOf: TableToRecord["listOf"], id: string) {
+	return { itemIds: listOf.itemIds.filter(itemId => itemId !== id) }
 }
 
-export class ListOfCountersApp extends React.PureComponent {
-	initialCounter = new CounterStore(randomId())
+function ListOfItem(props: {
+	id: string
+	child: (props: { id: string }) => JSX.Element
+	onRemove: (id: string) => void
+}) {
+	const handleRemove = React.useMemo(() => () => props.onRemove(props.id), [
+		props.id,
+		props.onRemove,
+	])
 
-	listOfStore = new ListOfStore<"counter">(randomId(), {
-		itemIds: [this.initialCounter.id],
-	})
+	console.log("render list of item", props.id)
 
-	render() {
-		return <ListOfCounters store={this.listOfStore} />
-	}
+	return (
+		<div>
+			<props.child id={props.id} />
+			<button onClick={handleRemove}>remove</button>
+		</div>
+	)
+}
+
+function ListOf(props: {
+	id: string
+	child: (props: { id: string }) => JSX.Element
+}) {
+	const initialValue = React.useMemo(() => {
+		return {
+			itemIds: [randomId()],
+		}
+	}, [props.id])
+
+	const [listOf, setListOf] = useDb("listOf", props.id, initialValue)
+
+	// TODO: when listOf state changes, this is a new function and all
+	// children have to rerender. I wonder if we could use a ref to
+	// render more performantly.
+	const handleInsert = React.useMemo(
+		() => () => setListOf(insert(listOf, randomId())),
+		[listOf, setListOf]
+	)
+
+	const handleRemove = React.useMemo(
+		() => (id: string) => setListOf(remove(listOf, id)),
+		[listOf, setListOf]
+	)
+
+	return (
+		<div>
+			<button onClick={handleInsert}>insert</button>
+			{listOf.itemIds.map(itemId => {
+				return (
+					<ListOfItem
+						key={itemId}
+						id={itemId}
+						child={props.child}
+						onRemove={handleRemove}
+					/>
+				)
+			})}
+		</div>
+	)
+}
+
+function Counter1(props: { id: string }) {
+	return <Counter delta={1} id={props.id} />
+}
+
+export function ListOfCountersApp() {
+	return <ListOf id={"listOf"} child={Counter1} />
 }
