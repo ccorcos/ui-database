@@ -31,7 +31,7 @@ function ListOfItem(props: {
 	)
 }
 
-function ListOf(props: {
+export function ListOf(props: {
 	id: string
 	child: (props: { id: string }) => JSX.Element
 }) {
@@ -73,7 +73,7 @@ function ListOf(props: {
 	)
 }
 
-function Counter1(props: { id: string }) {
+export function Counter1(props: { id: string }) {
 	return <Counter delta={1} id={props.id} />
 }
 

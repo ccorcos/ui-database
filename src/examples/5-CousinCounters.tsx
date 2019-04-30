@@ -1,85 +1,110 @@
 import * as React from "react"
-import { CounterStore, Counter, TableToRecord, db } from "./0-Counter"
+import { CounterStore, Counter, TableToRecord, db, useDb } from "./0-Counter"
 import { Store, randomId } from "../ui2"
-import { ListOfStore, ListOfCounters } from "./4-ListOfCounters"
-import { getHeapStatistics } from "v8"
+import { ListOfCountersApp, ListOf, Counter1 } from "./4-ListOfCounters"
 
-export class CousinStore extends Store<TableToRecord, "cousinApp"> {
-	constructor(id: string, initialValue?: TableToRecord["cousinApp"]) {
-		super("cousinApp", id, db)
-		const value = super.get()
-		if (value === undefined) {
-			if (initialValue === undefined) {
-				this.set({ listOfLeft: randomId(), listOfRight: randomId() })
-			} else {
-				this.set(initialValue)
-			}
-			db.commit()
-		}
-	}
-
-	get() {
-		const value = super.get()
-		if (value === undefined) {
-			throw new Error("Uninitialized Store.")
-		}
-		return value
-	}
+function ListOfCounters(props: { id: string }) {
+	return <ListOf id={props.id} child={Counter1} />
 }
 
-// Render the second counter of the right list.
-// React hooks would make this _wayyy_ easier.
-class CousinCounter extends React.PureComponent<{ store: CousinStore }> {
-	stops: Array<any> = []
-
-	constructor(props) {
-		super(props)
-		this.stops.push(this.props.store.listen(() => this.forceUpdate))
-		// TODO: weak types here.
-		const listOfStore = new ListOfStore<"counter">(
-			this.props.store.get().listOfRight
-		)
-		// TODO: recompute!
-		this.stops.push(listOfStore.listen(() => this.forceUpdate))
-		const counterId = listOfStore.get().itemIds[1]
-		if (counterId) {
-			const listOfStore = new ListOfStore<"counter">(
-				this.props.store.get().listOfRight
-			)
-			// TODO: recompute!
-			this.stops.push(listOfStore.listen(() => this.forceUpdate))
-		}
-	}
-
-	render() {
-		return <div>cousin:</div>
-	}
+function ListOfListOfCounters(props: { id: string }) {
+	return <ListOf id={props.id} child={ListOfCounters} />
 }
 
-export class CousinCountersApp extends React.PureComponent {
-	store = new CousinStore(randomId())
+// Need to create a sub component so we can useDb again.
+// TODO: do we have to do this? Kind of annoying.
+function MirrorCounterHelper(props: { counterIndex: number; listId: string }) {
+	// TODO: undefined override type
+	const [listOf] = useDb("listOf", props.listId, undefined as any)
+	if (!listOf) {
+		return <div>no listof</div>
+	}
+	// TODO: would be nice if we could type check this better. I guess listOf is
+	// pretty generic and doesn't have a generic type for whats in it...
+	const counterId = listOf.itemIds[props.counterIndex]
+	if (!counterId) {
+		return <div>no {props.counterIndex}th counter</div>
+	}
 
-	listOfLeftStore = new ListOfStore<"counter">(this.store.get().listOfLeft, {
-		itemIds: [randomId()],
+	return <Counter1 id={counterId} />
+}
+
+function MirrorCounter(props: {
+	listIndex: number
+	counterIndex: number
+	rootListId: string
+}) {
+	// TODO: undefined override type
+	const [rootListOf] = useDb("listOf", props.rootListId, undefined as any)
+	if (!rootListOf) {
+		return <div>no root listof</div>
+	}
+	const listId = rootListOf.itemIds[props.listIndex]
+	if (!listId) {
+		return <div>no {props.listIndex}th list</div>
+	}
+	return (
+		<MirrorCounterHelper listId={listId} counterIndex={props.counterIndex} />
+	)
+}
+
+export function CousinCounters() {
+	const rootListOfId = React.useMemo(randomId, [])
+	const listIndexId = React.useMemo(randomId, [])
+	const counterIndexId = React.useMemo(randomId, [])
+	const [{ count: listIndex }] = useDb("counter", listIndexId, { count: 0 })
+	const [{ count: counterIndex }] = useDb("counter", counterIndexId, {
+		count: 0,
 	})
 
-	listOfRightStore = new ListOfStore<"counter">(this.store.get().listOfRight, {
-		itemIds: [randomId(), randomId()],
-	})
-
-	render() {
-		return (
+	return (
+		<div>
 			<div>
-				<div style={{ display: "inline-block", verticalAlign: "top" }}>
-					<ListOfCounters store={this.listOfLeftStore} />
-				</div>
-				<div style={{ display: "inline-block", verticalAlign: "top" }}>
-					<ListOfCounters store={this.listOfRightStore} />
-				</div>
+				Lists
+				<ListOfListOfCounters id={rootListOfId} />
 			</div>
-		)
-	}
+			<div>
+				Mirror: ({listIndex},{counterIndex})
+				<MirrorCounter
+					listIndex={listIndex}
+					counterIndex={counterIndex}
+					rootListId={rootListOfId}
+				/>
+			</div>
+			<div>
+				List Index: <Counter1 id={listIndexId} />
+			</div>
+			<div>
+				Counter Index: <Counter1 id={counterIndexId} />
+			</div>
+		</div>
+	)
 }
+
+// export class CousinCountersApp extends React.PureComponent {
+// 	store = new CousinStore(randomId())
+
+// 	listOfLeftStore = new ListOfStore<"counter">(this.store.get().listOfLeft, {
+// 		itemIds: [randomId()],
+// 	})
+
+// 	listOfRightStore = new ListOfStore<"counter">(this.store.get().listOfRight, {
+// 		itemIds: [randomId(), randomId()],
+// 	})
+
+// 	render() {
+// 		return (
+// 			<div>
+// 				<div style={{ display: "inline-block", verticalAlign: "top" }}>
+// 					<ListOfCounters store={this.listOfLeftStore} />
+// 				</div>
+// 				<div style={{ display: "inline-block", verticalAlign: "top" }}>
+// 					<ListOfCounters store={this.listOfRightStore} />
+// 				</div>
+// 			</div>
+// 		)
+// 	}
+// }
 
 // // - TwoApps
 

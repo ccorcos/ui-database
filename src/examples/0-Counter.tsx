@@ -52,11 +52,19 @@ export class CounterStore extends Store<TableToRecord, "counter"> {
 	}
 }
 
+// export function useDb<Table extends keyof TableToRecord>(
+// 	table: Table,
+// 	id: string,
+// 	initialValue?: TableToRecord[Table]
+// ): [
+// 	TableToRecord[Table] | undefined,
+// 	(value: TableToRecord[Table] | undefined) => void
+// ]
 export function useDb<Table extends keyof TableToRecord>(
 	table: Table,
 	id: string,
 	initialValue: TableToRecord[Table]
-) {
+): [TableToRecord[Table], (value: TableToRecord[Table]) => void] {
 	const defaultState = React.useMemo(() => {
 		const record = db.get(table, id)
 		if (record === undefined && initialValue !== undefined) {
