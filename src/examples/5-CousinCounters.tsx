@@ -1,3 +1,7 @@
+// TODO: reactivity doesnt quite work properly...
+// when you update the index, the mirror state doesn't update correctly.
+//
+
 import * as React from "react"
 import { CounterStore, Counter, TableToRecord, db, useDb } from "./0-Counter"
 import { Store, randomId } from "../ui2"

@@ -1,12 +1,6 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { css } from "glamor"
-import { OneCounterApp } from "./examples/0-Counter"
-import { TwoIndependentCountersApp } from "./examples/1-TwoIndependentCounters"
-import { TwoDependentCountersApp } from "./examples/2-TwoDependentCounters"
-import { DeltaCountersApp } from "./examples/3-DeltaCounters"
-import { ListOfCountersApp } from "./examples/4-ListOfCounters"
-import { CousinCounters } from "./examples/5-CousinCounters"
 
 css.global("a", {
 	color: "inherit",
@@ -16,11 +10,17 @@ css.global("a", {
 const root = document.createElement("div")
 document.body.appendChild(root)
 
-// TODO: all of these components should accept a "rootId"
+// import { CounterApp } from "./0-notion-architecture/0-counter"
+// ReactDOM.render(<CounterApp />, root)
 
-// ReactDOM.render(<OneCounterApp />, root)
-// ReactDOM.render(<TwoIndependentCountersApp />, root)
-// ReactDOM.render(<TwoDependentCountersApp />, root)
-// ReactDOM.render(<DeltaCounters />, root)
-// ReactDOM.render(<ListOfCountersApp />, root)
-ReactDOM.render(<CousinCounters />, root)
+// import { IndependentCountersApp } from "./0-notion-architecture/1-independent-counters"
+// ReactDOM.render(<IndependentCountersApp />, root)
+
+// import { DependentCountersApp } from "./0-notion-architecture/2-dependent-counters"
+// ReactDOM.render(<DependentCountersApp />, root)
+
+// import { DeltaCountersApp } from "./0-notion-architecture/3-delta-counters"
+// ReactDOM.render(<DeltaCountersApp />, root)
+
+import { ListOfCountersApp } from "./0-notion-architecture/4-listof"
+ReactDOM.render(<ListOfCountersApp />, root)
