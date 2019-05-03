@@ -1,16 +1,3 @@
-/*
-
-This architecture exploits the fact that JavaScript is single-threaded.
-- When `AutoListener.startListener` is called, a global `AutoListener.currentListener`
-	is set to the current AutoListener.
-- Then any time `Store.getState()` is called, the store calls `AutoListener.currentListener.logStoreAccess`
-	which registers a listener on the store.
-- Components should subclass the custom Component<Props,Stores> class which uses
-	Stores instead of React local state. A component defines static properties for
-	stores and will construct stores when the component is constructed, or it can
-	accept stores as props.
-*/
-
 import * as React from "react"
 
 // ===========================================================================
