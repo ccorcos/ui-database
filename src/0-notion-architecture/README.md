@@ -37,6 +37,8 @@ The current Notion architecture exploits the fact that JavaScript is single-thre
 	- Rendering one component can initialize a store for rendering other components. This is the case for a popup inside a modal. Its super annoying and means that everything needs to be made global for it to be headlessly controlled.
 	- Behaviors like fetching data happen inside components like `<Request/>`. Ideally, these requests should be made based on the state so that the request could be fired headless and the component simply catches on and renders what it needs to.
 
+- TODO: Reactivity in `willMount` seems like a really bad idea. Need to look into this more though.
+
 ## Improvements
 
 - Eliminate magical reactivity in favor of explicit reactivity.

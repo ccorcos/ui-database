@@ -52,5 +52,20 @@ document.body.appendChild(root)
 // import { DeltaCountersApp } from "./2-notion-revised/3-delta-counters"
 // ReactDOM.render(<DeltaCountersApp />, root)
 
-import { ListOfCountersApp } from "./2-notion-revised/4-listof"
+// import { ListOfCountersApp } from "./2-notion-revised/4-listof"
+// ReactDOM.render(<ListOfCountersApp />, root)
+
+// import { CounterApp } from "./3-notion-revised/0-counter"
+// ReactDOM.render(<CounterApp />, root)
+
+// import { IndependentCountersApp } from "./3-notion-revised/1-independent-counters"
+// ReactDOM.render(<IndependentCountersApp />, root)
+
+// import { DependentCountersApp } from "./3-notion-revised/2-dependent-counters"
+// ReactDOM.render(<DependentCountersApp />, root)
+
+// import { DeltaCountersApp } from "./3-notion-revised/3-delta-counters"
+// ReactDOM.render(<DeltaCountersApp />, root)
+
+import { ListOfCountersApp } from "./3-notion-revised/4-listof"
 ReactDOM.render(<ListOfCountersApp />, root)
