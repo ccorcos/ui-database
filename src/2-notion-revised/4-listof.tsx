@@ -11,7 +11,7 @@ class ListOfItem extends Component<{
 		this.props.onRemove(this.props.id)
 	}
 
-	render() {
+	renderComponent() {
 		console.log("render list of item", this.props.id)
 		return (
 			<div>
@@ -27,26 +27,22 @@ export class ListOf extends Component<{
 	renderItem: (id: string) => JSX.Element
 }> {
 	handleInsertItem = () => {
-		const { itemIds } = this.context.db.get("listOf", this.props.id) || {
-			itemIds: [],
-		}
+		const { itemIds } = this.context.db.get("listOf", this.props.id)
 		this.context.db.set("listOf", this.props.id, {
 			itemIds: [...itemIds, randomId()],
 		})
 	}
 
 	handleRemoveItem = (id: string) => {
-		const { itemIds } = this.context.db.get("listOf", this.props.id) || {
-			itemIds: [],
-		}
+		const { itemIds } = this.context.db.get("listOf", this.props.id)
 		this.context.db.set("listOf", this.props.id, {
 			itemIds: itemIds.filter(itemId => itemId !== id),
 		})
 		// TODO: cleanup `this.context.db.remove("counter", id)`
 	}
 
-	render() {
-		const { itemIds } = this.useStore("listOf", this.props.id)
+	renderComponent() {
+		const { itemIds } = this.context.db.get("listOf", this.props.id)
 		return (
 			<div>
 				<button onClick={this.handleInsertItem}>insert</button>

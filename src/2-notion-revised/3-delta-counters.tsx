@@ -9,8 +9,8 @@ export class DeltaCounters extends Component<{}> {
 		// TODO: what if I only want to do this once, ever?
 		this.context.db.set("counter", "deltaCounter", { count: 1 })
 	}
-	render() {
-		const { count } = this.useStore("counter", "deltaCounter")
+	renderComponent() {
+		const { count } = this.context.db.get("counter", "deltaCounter")
 		return (
 			<div>
 				<Counter delta={count} id={"mainCounter"} />

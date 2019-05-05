@@ -19,6 +19,61 @@ export const defaultValues: {
 	listOf: { itemIds: [] },
 }
 
+class AutoListener {
+	constructor(private db: Database, private onChange: () => void) {}
+
+	public recordMap: {
+		[Table in keyof TableToRecord]?: {
+			[id: string]: undefined | true
+		}
+	} = {}
+
+	register<T extends keyof TableToRecord>(table: T, id: string) {
+		if (!this.recordMap[table]) {
+			this.recordMap[table] = {}
+		}
+		this.recordMap[table][id] = true
+	}
+
+	private listeners = new Set<() => void>()
+
+	listen(onChange: () => void) {
+		for (const table in this.recordMap) {
+			for (const id in this.recordMap[table]) {
+				this.listeners.add(
+					this.db.listen(table as keyof TableToRecord, id, onChange)
+				)
+			}
+		}
+		return this.stop
+	}
+
+	stop = () => {
+		for (const stop of Array.from(this.listeners)) {
+			stop()
+		}
+		this.listeners = new Set()
+	}
+
+	reset = () => {
+		this.stop()
+		this.recordMap = {}
+	}
+
+	private previousAutoListener: AutoListener | undefined
+
+	startListener() {
+		this.reset()
+		this.previousAutoListener = this.db.currentAutoListener
+		this.db.currentAutoListener = this
+	}
+
+	stopListener() {
+		this.db.currentAutoListener = this.previousAutoListener
+		this.listen(this.onChange)
+	}
+}
+
 export class Database {
 	public recordMap: {
 		[Table in keyof TableToRecord]?: {
@@ -39,6 +94,10 @@ export class Database {
 		table: Table,
 		id: string
 	): TableToRecord[Table] {
+		if (this.currentAutoListener) {
+			this.currentAutoListener.register(table, id)
+		}
+
 		if (!this.recordMap[table]) {
 			this.recordMap[table] = {}
 		}
@@ -78,7 +137,7 @@ export class Database {
 		return onStop
 	}
 
-	public autolisten(fn: () => void, onChange: () => void) {}
+	public currentAutoListener: AutoListener | undefined
 
 	public pendingEmit: {
 		[Table in keyof TableToRecord]?: {
@@ -157,28 +216,21 @@ export class Component<P> extends React.PureComponent<P> {
 	}
 	context: { db: Database }
 
-	listeners = new Set<() => void>()
-
-	rerender = () => this.forceUpdate()
-
-	useStore<T extends keyof TableToRecord>(table: T, id: string) {
-		// TODO: what happens when the id changes?
-		const value = this.context.db.get(table, id)
-		this.listeners.add(this.context.db.listen(table, id, this.rerender))
-		return value
-	}
+	autoListener = new AutoListener(this.context.db, () => this.forceUpdate())
 
 	componentWillUnmount() {
-		for (const stop of Array.from(this.listeners)) {
-			stop()
-		}
+		this.autoListener.reset()
+	}
+
+	// Override in subclass.
+	renderComponent(): React.ReactNode {
+		return null
+	}
+
+	render() {
+		this.autoListener.startListener()
+		const jsx = this.renderComponent()
+		this.autoListener.stopListener()
+		return jsx
 	}
 }
-
-/*
-Improvement Ideas.
-- `db[table].set` and `db[table].get` to avoid raw strings.
-- better default values
-- use namespaces to extend schema in a reusable way.
-- `Cursor<Table>` type for relations to a specific type of store for safer types.
-*/

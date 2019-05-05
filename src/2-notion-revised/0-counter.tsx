@@ -16,9 +16,9 @@ export class Counter extends Component<{ id: string; delta: number }> {
 		})
 	}
 
-	render() {
+	renderComponent() {
 		console.log("render counter")
-		const { count } = this.useStore("counter", this.props.id)
+		const { count } = this.context.db.get("counter", this.props.id)
 		return (
 			<div>
 				<button onClick={this.handleDecrement}>{"-"}</button>
