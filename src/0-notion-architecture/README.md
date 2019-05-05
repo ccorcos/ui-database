@@ -1,4 +1,4 @@
-## Notion Architecture
+# Notion Architecture
 
 The current Notion architecture exploits the fact that JavaScript is single-threaded.
 - When `AutoListener.startListener` is called, a global `AutoListener.currentListener` is set to the current AutoListener.
@@ -39,5 +39,6 @@ The current Notion architecture exploits the fact that JavaScript is single-thre
 
 ## Improvements
 
+- Eliminate magical reactivity in favor of explicit reactivity.
 - Model the entire UI state with RecordStores and create a well-typed interface for accessing joins.
 - Create services that react to state changes to make sync requests so everything can be controlled headless.
